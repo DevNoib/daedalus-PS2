@@ -1,5 +1,5 @@
 
-BIN2S = $(PS2SDK)/bin/bin2s
+BIN2C := $(PS2SDK)/bin/bin2c
 
 BASE_FILES = StdAfx.o
 CONFIG_FILES = Config/ConfigOptions.o
@@ -38,22 +38,26 @@ CONFIG = Release
 #CONFIG = Dev
 
 EE_BIN 	= Daedalus.elf
-EE_INCS += -I$(PS2SDK)/ports/include -I$(PS2DEV)/gskit/include -I./SysPS2/Include -I./Config/$(CONFIG)
+EE_INCS += -I$(PS2SDK)/ports/include -I$(PS2DEV)/gsKit/include -I./SysPS2/Include -I./Config/$(CONFIG)
 EE_CXXFLAGS	= -O2 -G0 -Wall -g -fno-rtti -fno-exceptions
 EE_LDFLAGS += -L$(PS2SDK)/ports/lib -L$(PS2DEV)/gsKit/lib
 EE_LIBS += -laudsrv -lcdvd -lpng -lz -lfileXio -lgskit -ldmakit -lvux -lpatches -lpad -lm -lhdd
 EE_OBJS = $(BUILD) $(PS2_BUILD) $(IRXS) 
 
+
+EE_CFLAGS += -DABI_EABI64
+EE_CXXFLAGS += -DABI_EABI64
+
 all: $(EE_BIN)
 
-%_irx.o: SysPS2/Utility/SMSCDVD/%.irx
-	$(BIN2S) $^ $*_irx.s $*_irx
-	$(EE_AS) $(EE_ASFLAGS) $*_irx.s -o $@	
+%_irx.c: SysPS2/Utility/SMSCDVD/%.irx
+	$(BIN2C) $< $@ $*_irx
+
 SysPS2/Utility/SMSCDVD/smscdvd.irx:
-	make -C SysPS2/Utility/SMSCDVD/
-%_irx.o: $(PS2SDK)/iop/irx/%.irx
-	$(BIN2S) $^ $*_irx.s $*_irx
-	$(EE_AS) $(EE_ASFLAGS) $*_irx.s -o $@	
+	$(MAKE) -C SysPS2/Utility/SMSCDVD/
+
+%_irx.c: $(PS2SDK)/iop/irx/%.irx
+	$(BIN2C) $< $@ $*_irx	
 pack:
 	ps2-packer-lite $(EE_BIN) $(EE_BIN:.elf=-packed.elf)
 run:

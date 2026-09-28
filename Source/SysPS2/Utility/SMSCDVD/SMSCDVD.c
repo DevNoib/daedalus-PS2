@@ -202,8 +202,8 @@ static int ( *Func_DRead  ) ( iop_io_file_t*, void*       );
 static int ( *Func_DClose ) ( iop_io_file_t*              );
 
 static int CDVD_init  ( iop_io_device_t*                      );
-static int CDVD_open  ( iop_io_file_t*, const char*, int, ... );
-static int CDVD_lseek ( iop_io_file_t*, unsigned long, int    );
+static int CDVD_open  ( iop_io_file_t*, const char*, int      );
+static int CDVD_lseek ( iop_io_file_t*, int, int              );
 static int CDVD_read  ( iop_io_file_t*, void*, int            );
 static int CDVD_write ( iop_io_file_t*, void*, int            );
 static int CDVD_close ( iop_io_file_t*                        );
@@ -373,7 +373,7 @@ static int ISO_Open ( iop_io_file_t* apFile, const char* name ) {
 
 }  /* end ISO_Open */
 
-static int CDVD_open ( iop_io_file_t* apFile, const char* apName, int aMode, ... ) {
+static int CDVD_open ( iop_io_file_t* apFile, const char* apName, int aMode ) {
 
  if ( aMode != O_RDONLY ) return -EACCES;
 
@@ -381,7 +381,7 @@ static int CDVD_open ( iop_io_file_t* apFile, const char* apName, int aMode, ...
 
 }  /* end CDVD_open */
 
-static int CDVD_lseek ( iop_io_file_t* apFile, unsigned long offset, int whence ) {
+static int CDVD_lseek ( iop_io_file_t* apFile, int offset, int whence ) {
 
  int i = _LookupFD (  ( int )apFile -> privdata  );
 
@@ -539,15 +539,15 @@ static int CDVD_findfile ( const char* fname, struct TocEntry* tocEntry ) {
 
  if (  CachedDirInfo.m_Valid  && ComparePath ( pathname ) == MATCH  ) {
 
-  ( char* )tocEntryPointer = CachedDirInfo.cache;
+  tocEntryPointer = ( dirTocEntry* )CachedDirInfo.cache;
 
   for (  ; ( char* )tocEntryPointer < (  CachedDirInfo.cache + ( CachedDirInfo.m_CacheSize * 2048 )  );
-           ( char* )tocEntryPointer += tocEntryPointer -> m_Length
+           tocEntryPointer = ( dirTocEntry* )( ( char* )tocEntryPointer + tocEntryPointer -> m_Length )
   ) {
 
    if ( !tocEntryPointer -> m_Length )
 
-    ( char* )tocEntryPointer = CachedDirInfo.cache + (     (    (   (  ( char* )tocEntryPointer - CachedDirInfo.cache  ) / 2048   ) + 1    ) * 2048     );
+    tocEntryPointer = ( dirTocEntry* )( CachedDirInfo.cache + (     (    (   (  ( char* )tocEntryPointer - CachedDirInfo.cache  ) / 2048   ) + 1    ) * 2048     ) );
 
    if (   ( char* )tocEntryPointer >= (  CachedDirInfo.cache + ( CachedDirInfo.m_CacheSize * 2048 )  )   ) break;
 
@@ -577,17 +577,17 @@ static int CDVD_findfile ( const char* fname, struct TocEntry* tocEntry ) {
 
  while ( CachedDirInfo.m_CacheSize > 0 ) {
 
-  ( char* )tocEntryPointer = CachedDirInfo.cache;
+  tocEntryPointer = ( dirTocEntry* )CachedDirInfo.cache;
 
-  if ( !CachedDirInfo.m_CacheOffset ) ( char* )tocEntryPointer += tocEntryPointer -> m_Length;
+  if ( !CachedDirInfo.m_CacheOffset ) tocEntryPointer = ( dirTocEntry* )( ( char* )tocEntryPointer + tocEntryPointer -> m_Length );
 
   for (  ; ( char* )tocEntryPointer < (  CachedDirInfo.cache + ( CachedDirInfo.m_CacheSize * 2048 )  );
-           ( char* )tocEntryPointer += tocEntryPointer -> m_Length
+           tocEntryPointer = ( dirTocEntry* )( ( char* )tocEntryPointer + tocEntryPointer -> m_Length )
   ) {
 
    if ( !tocEntryPointer -> m_Length )
 
-    ( char* )tocEntryPointer = CachedDirInfo.cache + (     (    (   (  ( char* )tocEntryPointer - CachedDirInfo.cache  ) / 2048   ) + 1    ) * 2048     );
+    tocEntryPointer = ( dirTocEntry* )( CachedDirInfo.cache + (     (    (   (  ( char* )tocEntryPointer - CachedDirInfo.cache  ) / 2048   ) + 1    ) * 2048     ) );
 
    if (   ( char* )tocEntryPointer >= (  CachedDirInfo.cache + ( CachedDirInfo.m_CacheSize * 2048 )  )   ) break;
 
@@ -724,18 +724,18 @@ static int FindPath ( char* pathname ) {
 
   found_dir = FALSE;
 
-  ( char* )tocEntryPointer  = CachedDirInfo.cache;
-  ( char* )tocEntryPointer += tocEntryPointer -> m_Length;
+  tocEntryPointer = ( dirTocEntry* )CachedDirInfo.cache;
+  tocEntryPointer = ( dirTocEntry* )( ( char* )tocEntryPointer + tocEntryPointer -> m_Length );
 
   dir_entry = 0;
 
   for (  ; ( char* )tocEntryPointer < (  CachedDirInfo.cache + ( CachedDirInfo.m_CacheSize * 2048 )  );
-           ( char* )tocEntryPointer += tocEntryPointer -> m_Length
+           tocEntryPointer = ( dirTocEntry* )( ( char* )tocEntryPointer + tocEntryPointer -> m_Length )
   ) {
 
    if ( !tocEntryPointer -> m_Length )
 
-    ( char* )tocEntryPointer = CachedDirInfo.cache + (     (    (   (  ( char* )tocEntryPointer - CachedDirInfo.cache  ) / 2048   ) + 1    ) * 2048     );
+    tocEntryPointer = ( dirTocEntry* )( CachedDirInfo.cache + (     (    (   (  ( char* )tocEntryPointer - CachedDirInfo.cache  ) / 2048   ) + 1    ) * 2048     ) );
 
    if (   ( char* )tocEntryPointer >= (  CachedDirInfo.cache + ( CachedDirInfo.m_CacheSize * 2048 )  )   ) {
 
@@ -754,7 +754,7 @@ static int FindPath ( char* pathname ) {
             )
      ) return CachedDirInfo.m_Valid = FALSE;
 
-     ( char* )tocEntryPointer = CachedDirInfo.cache;
+     tocEntryPointer = ( dirTocEntry* )CachedDirInfo.cache;
 
     } else return CachedDirInfo.m_Valid = FALSE;
 
@@ -896,10 +896,10 @@ static int ISO_DOpen (  iop_io_file_t* apFile, const char* apName ) {
  if (  !CDVD_Cache_Dir ( apName,                   CACHE_START )  ) return -ENOENT;
  if (  !CDVD_Cache_Dir ( CachedDirInfo.m_Pathname, CACHE_START )  ) return -ENOENT;
 
- ( char* )s_tocEntryPointer  = CachedDirInfo.cache;
- ( char* )s_tocEntryPointer += s_tocEntryPointer -> m_Length;
+ s_tocEntryPointer = ( dirTocEntry* )CachedDirInfo.cache;
+ s_tocEntryPointer = ( dirTocEntry* )( ( char* )s_tocEntryPointer + s_tocEntryPointer -> m_Length );
 
- if ( CachedDirInfo.m_PathDepth == 0 ) ( char* )s_tocEntryPointer += s_tocEntryPointer -> m_Length;
+ if ( CachedDirInfo.m_PathDepth == 0 ) s_tocEntryPointer = ( dirTocEntry* )( ( char* )s_tocEntryPointer + s_tocEntryPointer -> m_Length );
 
  s_DirEntry = 0;
 
@@ -925,7 +925,7 @@ static int ISO_DRead ( iop_io_file_t* apFile, void* apRetVal ) {
 
    if ( s_tocEntryPointer -> m_Length == 0 )
 
-    ( char* )s_tocEntryPointer = CachedDirInfo.cache + (((((char*)s_tocEntryPointer - CachedDirInfo.cache)/2048)+1)*2048);
+    s_tocEntryPointer = ( dirTocEntry* )( CachedDirInfo.cache + (((((char*)s_tocEntryPointer - CachedDirInfo.cache)/2048)+1)*2048) );
 
    if (  ( char* )s_tocEntryPointer >= CachedDirInfo.cache + ( CachedDirInfo.m_CacheSize * 2048 )  ) break;
 
@@ -943,7 +943,7 @@ static int ISO_DRead ( iop_io_file_t* apFile, void* apRetVal ) {
 
    ++s_DirEntry;
 
-   ( char* )s_tocEntryPointer += s_tocEntryPointer -> m_Length;
+   s_tocEntryPointer = ( dirTocEntry* )( ( char* )s_tocEntryPointer + s_tocEntryPointer -> m_Length );
 
    return 1;
 
@@ -955,7 +955,7 @@ static int ISO_DRead ( iop_io_file_t* apFile, void* apRetVal ) {
 
   } else break;
 
-  ( char* )s_tocEntryPointer = CachedDirInfo.cache;
+  s_tocEntryPointer = ( dirTocEntry* )CachedDirInfo.cache;
 
  }  /* end while */
 
@@ -963,7 +963,7 @@ static int ISO_DRead ( iop_io_file_t* apFile, void* apRetVal ) {
 
 }  /* end ISO_DRead */
 
-static int CDVD_dread ( iop_io_file_t* apFile, void* apRetVal ) {
+static int CDVD_dread ( iop_io_file_t* apFile, io_dirent_t* apRetVal ) {
 
  return Func_DRead ( apFile, apRetVal );
 
@@ -1159,7 +1159,7 @@ static int CDVD_deinit ( iop_io_device_t* apDev ) {
 
 }  /* end CDVD_deinit */
 
-static int CDVD_format ( iop_io_file_t* apFile, ... ) {
+static int CDVD_format ( iop_io_file_t* apFile ) {
 
  return -ENOTSUP;
 
@@ -1177,13 +1177,13 @@ static int CDVD_dummy_file ( iop_io_file_t* apFile, const char* apName ) {
 
 }  /* end CDVD_dummy_file */
 
-static int CDVD_getstat ( iop_io_file_t* apFile, const char* apName, void* apRetVal ) {
+static int CDVD_getstat ( iop_io_file_t* apFile, const char* apName, io_stat_t* apRetVal ) {
 
  return -ENOTSUP;
 
 }  /* end CDVD_getstat */
 
-static int CDVD_chstat ( iop_io_file_t* apFile, const char* apName, void* apPtr, unsigned int aVal ) {
+static int CDVD_chstat ( iop_io_file_t* apFile, const char* apName, io_stat_t* apPtr, unsigned int aVal ) {
 
  return -ENOTSUP;
 
