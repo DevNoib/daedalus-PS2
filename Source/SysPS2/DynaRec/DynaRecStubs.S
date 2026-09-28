@@ -104,28 +104,13 @@ exit_dynarec_text:
 #	a1 - the number of bytes to invalidate
 _DaedalusICacheInvalidate:
 
-	addiu		$v0, $0, 0xffc0			# v0 = ~63
-
-	# Store base+size(-1) in a1
-	addu		$a1, $a1, $a0
-	addiu		$a1, $a1, -1
-
-	# Truncate 'start' pointer down to nearest 64 bytes boundary
-	and			$a0, $a0, $v0
-
-	# Truncate 'end' pointer down to nearest 64 bytes boundary
-	and			$a1, $a1, $v0
-
-	# Do while current < end
-invalidate_next:
-	#sync.l
-	#cache 		0x18, 0($a0)
-	sync.l
-	sync.p
-	cache		0x0B, 0($a0)					# 8 is for icache invalidate
-	bne			$a0, $a1, invalidate_next		# Keep looping until
-	addiu		$a0, $a0, 64
-
+	addiu		$sp, $sp, -16
+	sd			$ra, 0($sp)
+	addiu		$a0, $zero, 2			
+	jal			FlushCache
+	nop
+	ld			$ra, 0($sp)
+	addiu		$sp, $sp, 16
 	jr			$ra
 	nop
 

@@ -255,6 +255,9 @@ void CFragmentCache::InsertFragment( CFragment * p_fragment )
 	mInputLength += p_fragment->GetInputLength();
 	mOutputLength += p_fragment->GetOutputLength();
 
+	mCachedFragmentAddress = fragment_address;
+	mpCachedFragment = p_fragment;
+
 #ifdef DAEDALUS_DEBUG_CONSOLE
 	if((mFragments.size() % 100) == 0)
 	{
