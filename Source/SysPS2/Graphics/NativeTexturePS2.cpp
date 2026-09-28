@@ -223,6 +223,43 @@ void	CNativeTexture::InstallTexture() const
 	}
 }
 
+bool CNativeTexture::InstallTextureInSecondarySlot() const
+{
+	if (!HasData())
+		return false;
+
+	u32 bytes_required = GetBytesRequired();
+	if (mTexturePs2.PSM == GS_PSM_CT32 && mTextureConv)
+		bytes_required *= 2;
+
+	if (bytes_required > 0x40000)
+		return false;
+
+	static GSTEXTURE secondary_texture;
+	secondary_texture = mTexturePs2;
+	secondary_texture.Vram = texture_vram + 0x80000;
+	if (secondary_texture.PSM == GS_PSM_T4 || secondary_texture.PSM == GS_PSM_T8)
+		secondary_texture.VramClut = texture_vram + 0xC0000;
+
+	CurrTex = &secondary_texture;
+
+	if (secondary_texture.PSM == GS_PSM_T8)
+	{
+		SyncDCache(secondary_texture.Clut, (u8*)secondary_texture.Clut + kPalette8BytesRequired);
+		gsKit_texture_send_inline(gsGlobal, secondary_texture.Clut, 16, 16, secondary_texture.VramClut, secondary_texture.ClutPSM, 1, GS_CLUT_PALLETE);
+	}
+	else if (secondary_texture.PSM == GS_PSM_T4)
+	{
+		SyncDCache(secondary_texture.Clut, (u8*)secondary_texture.Clut + kPalette8BytesRequired);
+		gsKit_texture_send_inline(gsGlobal, secondary_texture.Clut, 8, 2, secondary_texture.VramClut, secondary_texture.ClutPSM, 1, GS_CLUT_PALLETE);
+	}
+
+	SyncDCache(secondary_texture.Mem, (u8*)secondary_texture.Mem + bytes_required);
+	gsKit_texture_send_inline(gsGlobal, secondary_texture.Mem, secondary_texture.Width, secondary_texture.Height,
+		secondary_texture.Vram, secondary_texture.PSM, secondary_texture.TBW, GS_CLUT_NONE);
+	return true;
+}
+
 
 namespace
 {

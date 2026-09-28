@@ -1016,6 +1016,67 @@ void BaseRenderer::SetNewVertexInfo(u32 address, u32 v0, u32 n)
 	{	//Point light for Zelda MM
 		_TnLVU0_Plight(&mat_world, &mat_world_project, pVtxBase, &mVtxProjected[v0], n, &mTnL);
 	}
+
+	if (mTnL.Flags.Light)
+	{
+		for (u32 i = v0; i < v0 + n; ++i)
+		{
+			const FiddledVtx & vert = pVtxBase[i - v0];
+			const v3 & ambient = mTnL.Lights[mTnL.NumLights].Colour;
+			v3 colour(ambient.x, ambient.y, ambient.z);
+
+			if (mTnL.Flags.PointLight)
+			{
+				const v4 world_pos(f32(vert.x), f32(vert.y), f32(vert.z), 1.0f);
+				for (u32 l = 0; l < mTnL.NumLights; ++l)
+				{
+					if (mTnL.Lights[l].SkipIfZero)
+					{
+						v3 d(mTnL.Lights[l].Position.x - world_pos.x,
+						     mTnL.Lights[l].Position.y - world_pos.y,
+						     mTnL.Lights[l].Position.z - world_pos.z);
+						const f32 qlen = d.LengthSq();
+						const f32 llen = sqrtf(qlen);
+						const f32 at = mTnL.Lights[l].ca +
+						               mTnL.Lights[l].la * llen +
+						               mTnL.Lights[l].qa * qlen;
+						if (at > 0.0f)
+						{
+							const f32 intensity = 1.0f / at;
+							colour.x += mTnL.Lights[l].Colour.x * intensity;
+							colour.y += mTnL.Lights[l].Colour.y * intensity;
+							colour.z += mTnL.Lights[l].Colour.z * intensity;
+						}
+					}
+				}
+			}
+			else
+			{
+				v3 normal(f32(vert.norm_x), f32(vert.norm_y), f32(vert.norm_z));
+				normal = mat_world.TransformNormal(normal);
+				normal.Normalise();
+
+				for (u32 l = 0; l < mTnL.NumLights; ++l)
+				{
+					const f32 intensity = normal.Dot(mTnL.Lights[l].Direction);
+					if (intensity > 0.0f)
+					{
+						colour.x += mTnL.Lights[l].Colour.x * intensity;
+						colour.y += mTnL.Lights[l].Colour.y * intensity;
+						colour.z += mTnL.Lights[l].Colour.z * intensity;
+					}
+				}
+			}
+
+			if (colour.x > 1.0f) colour.x = 1.0f;
+			if (colour.y > 1.0f) colour.y = 1.0f;
+			if (colour.z > 1.0f) colour.z = 1.0f;
+
+			mVtxProjected[i].Colour.x = colour.x;
+			mVtxProjected[i].Colour.y = colour.y;
+			mVtxProjected[i].Colour.z = colour.z;
+		}
+	}
 }
 
 #else	//Transform using VFPU(fast) or FPU/CPU(slow)

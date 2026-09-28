@@ -75,6 +75,49 @@ void Recolour( void * data, void * palette, u32 width, u32 height, u32 stride, E
 
 
 template< typename T >
+static void InvertTextureRGBPixels( void * p_data, u32 width, u32 height, u32 stride )
+{
+	T * data = reinterpret_cast< T * >( p_data );
+	for( u32 y = 0; y < height; ++y )
+	{
+		for( u32 x = 0; x < width; ++x )
+		{
+			const T c( data[x] );
+			data[x] = T( 255 - c.GetR(), 255 - c.GetG(), 255 - c.GetB(), c.GetA() );
+		}
+		data = AddByteOffset( data, stride );
+	}
+}
+
+template< typename T >
+static void InvertTextureRGBPalette( void * p_data, u32 num_entries )
+{
+	T * data = reinterpret_cast< T * >( p_data );
+	for( u32 x = 0; x < num_entries; ++x )
+	{
+		const T c( data[x] );
+		data[x] = T( 255 - c.GetR(), 255 - c.GetG(), 255 - c.GetB(), c.GetA() );
+	}
+}
+
+void InvertTextureRGB( void * data, void * palette, u32 width, u32 height, u32 stride, ETextureFormat texture_format )
+{
+	switch( texture_format )
+	{
+	case TexFmt_5650:       InvertTextureRGBPixels< NativePf5650 >( data, width, height, stride ); return;
+	case TexFmt_5551:       InvertTextureRGBPixels< NativePf5551 >( data, width, height, stride ); return;
+	case TexFmt_4444:       InvertTextureRGBPixels< NativePf4444 >( data, width, height, stride ); return;
+	case TexFmt_8888:       InvertTextureRGBPixels< NativePf8888 >( data, width, height, stride ); return;
+	case TexFmt_CI4_8888:   InvertTextureRGBPalette< NativePf8888 >( palette, 16 ); return;
+	case TexFmt_CI8_8888:   InvertTextureRGBPalette< NativePf8888 >( palette, 256 ); return;
+	}
+#ifdef DAEDALUS_DEBUG_CONSOLE
+	DAEDALUS_ERROR( "unhandled texture format for rgb inversion" );
+#endif
+}
+
+
+template< typename T >
 static void ClampTexels( void * texels, u32 n64_width, u32 n64_height, u32 native_width, u32 native_height, u32 native_stride )
 {
 	#ifdef DAEDALUS_ENABLE_ASSERTS

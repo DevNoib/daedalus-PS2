@@ -49,6 +49,9 @@ class CNativeTexture : public CRefCounted
 		static	CRefPtr<CNativeTexture>		CreateFromPng( const char * p_filename, ETextureFormat texture_format );
 
 		void							InstallTexture() const;
+#ifdef DAEDALUS_PS2
+		bool							InstallTextureInSecondarySlot() const;
+#endif
 
 		void							SetData( void * data, void * palette );
 

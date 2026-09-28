@@ -120,13 +120,11 @@ void sceGuSetMatrix(EGuMatrixType type, const ScePspFMatrix4* mtx)
 	memcpy(&proj, mtx, sizeof(VU_MATRIX));
 }
 
+static c32 gsTexEnvColour( 255, 255, 255, 255 );
+
 void gsTexEnvColor(int color)
 {
-	//TexEnvColor = GS_SETREG_RGBAQ(color & 0xFF, (color >> 8) & 0xFF, (color >> 16) & 0xFF, ((color >> 24) & 0xFF + 1) / 2, 0x00);
-	//useTexEnvColor = true;
-
-	//gsFog(0xFE, (color & 0xFF), ((color >> 8) & 0xFF), ((color >> 16) & 0xFF));
-	//gsGlobal->PrimFogEnable = 1;
+	gsTexEnvColour = c32( (u32)color );
 }
 
 void sceGuFog(float near, float far, unsigned int color)
@@ -145,9 +143,16 @@ void sceGuFog(float near, float far, unsigned int color)
 
 static int gstfunc = 0;
 static int gstcc = 1;
+static int gsRequestedTFX = GS_TFX_REPLACE;
+
+static inline u8 GSModulateColourChannel(u8 value, bool textured)
+{
+	return (textured && gsRequestedTFX == GS_TFX_MODULATE) ? (u8)(((u32)value + 1) >> 1) : value;
+}
 
 void gsTexFunc(int func, int mode)
 {
+	gsRequestedTFX = func;
 	//F * Cv + (0xFF - F) * Fc
 
 	//printf("func %d\n", func);
@@ -559,7 +564,7 @@ void DrawPrims(DaedalusVtx* p_vertices, u32 num_vertices, u32 prim_type, bool te
 					(int)p_vertices[i + 1].Position.z,
 					p_vertices[i + 1].Texture.x, // U2
 					p_vertices[i + 1].Texture.y, // V2
-					GS_SETREG_RGBAQ(p_vertices[i + 0].Colour.GetR(), p_vertices[i + 0].Colour.GetG(), p_vertices[i + 0].Colour.GetB(), (p_vertices[i + 0].Colour.GetA()) / 2, 0x00));
+					GS_SETREG_RGBAQ(GSModulateColourChannel(p_vertices[i + 0].Colour.GetR(), textured), GSModulateColourChannel(p_vertices[i + 0].Colour.GetG(), textured), GSModulateColourChannel(p_vertices[i + 0].Colour.GetB(), textured), (p_vertices[i + 0].Colour.GetA()) / 2, 0x00));
 			}
 			else
 			{
@@ -569,7 +574,7 @@ void DrawPrims(DaedalusVtx* p_vertices, u32 num_vertices, u32 prim_type, bool te
 					p_vertices[i + 1].Position.x,
 					p_vertices[i + 1].Position.y,
 					(int)p_vertices[i + 0].Position.z,
-					GS_SETREG_RGBAQ(p_vertices[i + 0].Colour.GetR(), p_vertices[i + 0].Colour.GetG(), p_vertices[i + 0].Colour.GetB(), (p_vertices[i + 0].Colour.GetA()) / 2, 0x00));
+					GS_SETREG_RGBAQ(GSModulateColourChannel(p_vertices[i + 0].Colour.GetR(), textured), GSModulateColourChannel(p_vertices[i + 0].Colour.GetG(), textured), GSModulateColourChannel(p_vertices[i + 0].Colour.GetB(), textured), (p_vertices[i + 0].Colour.GetA()) / 2, 0x00));
 			}
 		}
 	}
@@ -609,9 +614,9 @@ void DrawPrims(DaedalusVtx* p_vertices, u32 num_vertices, u32 prim_type, bool te
 				q3._f32 /= out_vect[2].w;
 			}
 
-			color[0] = GS_SETREG_RGBAQ(p_vertices[i + 0].Colour.GetR(), p_vertices[i + 0].Colour.GetG(), p_vertices[i + 0].Colour.GetB(), ((u32)p_vertices[i + 0].Colour.GetA() + 1) / 2, q1._u32);
-			color[1] = GS_SETREG_RGBAQ(p_vertices[i + 1].Colour.GetR(), p_vertices[i + 1].Colour.GetG(), p_vertices[i + 1].Colour.GetB(), ((u32)p_vertices[i + 1].Colour.GetA() + 1) / 2, q2._u32);
-			color[2] = GS_SETREG_RGBAQ(p_vertices[i + 2].Colour.GetR(), p_vertices[i + 2].Colour.GetG(), p_vertices[i + 2].Colour.GetB(), ((u32)p_vertices[i + 2].Colour.GetA() + 1) / 2, q3._u32);
+			color[0] = GS_SETREG_RGBAQ(GSModulateColourChannel(p_vertices[i + 0].Colour.GetR(), textured), GSModulateColourChannel(p_vertices[i + 0].Colour.GetG(), textured), GSModulateColourChannel(p_vertices[i + 0].Colour.GetB(), textured), ((u32)p_vertices[i + 0].Colour.GetA() + 1) / 2, q1._u32);
+			color[1] = GS_SETREG_RGBAQ(GSModulateColourChannel(p_vertices[i + 1].Colour.GetR(), textured), GSModulateColourChannel(p_vertices[i + 1].Colour.GetG(), textured), GSModulateColourChannel(p_vertices[i + 1].Colour.GetB(), textured), ((u32)p_vertices[i + 1].Colour.GetA() + 1) / 2, q2._u32);
+			color[2] = GS_SETREG_RGBAQ(GSModulateColourChannel(p_vertices[i + 2].Colour.GetR(), textured), GSModulateColourChannel(p_vertices[i + 2].Colour.GetG(), textured), GSModulateColourChannel(p_vertices[i + 2].Colour.GetB(), textured), ((u32)p_vertices[i + 2].Colour.GetA() + 1) / 2, q3._u32);
 
 			fog[0] = p_vertices[i + 0].Colour.GetA();
 			fog[1] = p_vertices[i + 1].Colour.GetA();
@@ -709,7 +714,7 @@ void DrawPrims(DaedalusVtx* p_vertices, u32 num_vertices, u32 prim_type, bool te
 			}
 
 			_gsKit_prim_triangle_strip_texture_3d(gsGlobal, CurrTex,
-				tris, num_vertices, GS_SETREG_RGBAQ(p_vertices[0].Colour.GetR(), p_vertices[0].Colour.GetG(), p_vertices[0].Colour.GetB(), (p_vertices[0].Colour.GetA()) / 2, 0x00));
+				tris, num_vertices, GS_SETREG_RGBAQ(GSModulateColourChannel(p_vertices[0].Colour.GetR(), textured), GSModulateColourChannel(p_vertices[0].Colour.GetG(), textured), GSModulateColourChannel(p_vertices[0].Colour.GetB(), textured), (p_vertices[0].Colour.GetA()) / 2, 0x00));
 		}
 		else
 		{
@@ -720,7 +725,7 @@ void DrawPrims(DaedalusVtx* p_vertices, u32 num_vertices, u32 prim_type, bool te
 				tris[i * 3 + 2] = p_vertices[i].Position.z;
 			}
 
-			gsKit_prim_triangle_strip_3d(gsGlobal, tris, num_vertices, GS_SETREG_RGBAQ(p_vertices[0].Colour.GetR(), p_vertices[0].Colour.GetG(), p_vertices[0].Colour.GetB(), (p_vertices[0].Colour.GetA()) / 2, 0x00));
+			gsKit_prim_triangle_strip_3d(gsGlobal, tris, num_vertices, GS_SETREG_RGBAQ(GSModulateColourChannel(p_vertices[0].Colour.GetR(), textured), GSModulateColourChannel(p_vertices[0].Colour.GetG(), textured), GSModulateColourChannel(p_vertices[0].Colour.GetB(), textured), (p_vertices[0].Colour.GetA()) / 2, 0x00));
 		}
 
 		free(tris);
@@ -1056,6 +1061,53 @@ inline void RendererPS2::RenderFog( DaedalusVtx * p_vertices, u32 num_vertices, 
 	}
 }
 
+bool RendererPS2::RenderTextureBlend( DaedalusVtx * p_vertices, u32 num_vertices,
+	u32 triangle_mode, u32 texture_idx, const CNativeTexture * texture )
+{
+	if (gsRequestedTFX != GS_TFX_BLEND || texture == NULL || gsBlend != GS_SETTING_OFF)
+		return false;
+
+	TextureInfo inverse_texture_info = mBoundTextureInfo[texture_idx];
+	inverse_texture_info.SetInvertRGB(true);
+	CRefPtr<CNativeTexture> inverse_texture = CTextureCache::Get()->GetOrCreateTexture(inverse_texture_info);
+	if (inverse_texture == NULL || !inverse_texture->InstallTextureInSecondarySlot())
+		return false;
+
+	const int saved_tcc = gstcc;
+
+	gsTexFunc(GS_TFX_MODULATE, saved_tcc);
+	DrawPrims(p_vertices, num_vertices, triangle_mode, true);
+
+	texture->InstallTexture();
+	DaedalusVtx * environment_vertices = num_vertices <= ARRAYSIZE(mVtx_Save)
+		? mVtx_Save
+		: static_cast<DaedalusVtx*>(malloc(num_vertices * sizeof(DaedalusVtx)));
+	if (environment_vertices == NULL)
+	{
+		gsTexFunc(GS_TFX_BLEND, saved_tcc);
+		return true; 
+	}
+
+	memcpy(environment_vertices, p_vertices, num_vertices * sizeof(DaedalusVtx));
+	for (u32 i = 0; i < num_vertices; ++i)
+	{
+		const u8 a = environment_vertices[i].Colour.GetA();
+		environment_vertices[i].Colour = c32(gsTexEnvColour.GetR(), gsTexEnvColour.GetG(), gsTexEnvColour.GetB(), a);
+	}
+
+	gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0, 2, 2, 1, 128), 0);
+	gsBlend = GS_SETTING_ON;
+	DrawPrims(environment_vertices, num_vertices, triangle_mode, true);
+	gsBlend = GS_SETTING_OFF;
+	gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0, 1, 0, 1, 128), 0);
+
+	if (environment_vertices != mVtx_Save)
+		free(environment_vertices);
+
+	gsTexFunc(GS_TFX_BLEND, saved_tcc);
+	return true;
+}
+
 void RendererPS2::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num_vertices, u32 triangle_mode, u32 render_mode, bool disable_zbuffer )
 {
 	static bool	ZFightingEnabled = false;
@@ -1239,17 +1291,17 @@ void RendererPS2::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 		}
 
 		/*if (mTnL.Flags.Fog)
-		{
-			DaedalusVtx* p_FogVtx = static_cast<DaedalusVtx*>(malloc(num_vertices * sizeof(DaedalusVtx)));
-			memcpy(p_FogVtx, p_vertices, num_vertices * sizeof(DaedalusVtx));
-			details.ColourAdjuster.Process(p_vertices, num_vertices);
-			//sceGuDrawArray(triangle_mode, render_flags, num_vertices, nullptr, p_vertices);
-			DrawPrims(p_vertices, num_vertices, triangle_mode, installed_texture);
-			RenderFog(p_FogVtx, num_vertices, triangle_mode, 0);
+{
+    DaedalusVtx* p_FogVtx = static_cast<DaedalusVtx*>(malloc(num_vertices * sizeof(DaedalusVtx)));
+    memcpy(p_FogVtx, p_vertices, num_vertices * sizeof(DaedalusVtx));
+    details.ColourAdjuster.Process(p_vertices, num_vertices);
+    //sceGuDrawArray(triangle_mode, render_flags, num_vertices, nullptr, p_vertices);
+    DrawPrims(p_vertices, num_vertices, triangle_mode, installed_texture);
+    RenderFog(p_FogVtx, num_vertices, triangle_mode, 0);
 
-			free(p_FogVtx);
-		}
-		else*/
+    free(p_FogVtx);
+            }
+           else*/
 		{
 			details.ColourAdjuster.Process(p_vertices, num_vertices);
 			
@@ -1335,6 +1387,7 @@ void RendererPS2::RenderUsingRenderSettings( const CBlendStates * states, Daedal
 		bool installed_texture = false;
 
 		u32 texture_idx = 0;
+		CRefPtr<CNativeTexture> active_texture;
 
 		if (install_texture0 || install_texture1)
 		{
@@ -1370,22 +1423,20 @@ void RendererPS2::RenderUsingRenderSettings( const CBlendStates * states, Daedal
 				texture_idx = install_texture0 ? 0 : 1;
 			}
 
-			CRefPtr<CNativeTexture> texture;
-
 			if (out.MakeTextureWhite)
 			{
 				TextureInfo white_ti = mBoundTextureInfo[texture_idx];
 				white_ti.SetWhite(true);
-				texture = CTextureCache::Get()->GetOrCreateTexture(white_ti);
+				active_texture = CTextureCache::Get()->GetOrCreateTexture(white_ti);
 			}
 			else
 			{
-				texture = mBoundTexture[texture_idx];
+				active_texture = mBoundTexture[texture_idx];
 			}
 
-			if (texture != nullptr)
+			if (active_texture != nullptr)
 			{
-				texture->InstallTexture();
+				active_texture->InstallTexture();
 				installed_texture = true;
 			}
 		}
@@ -1401,7 +1452,10 @@ void RendererPS2::RenderUsingRenderSettings( const CBlendStates * states, Daedal
 		}
 
 		//sceGuDrawArray(triangle_mode, render_flags, num_vertices, nullptr, p_vertices);
-		DrawPrims(p_vertices, num_vertices, triangle_mode, installed_texture);
+		if (!(installed_texture && !out.MakeTextureWhite && RenderTextureBlend(p_vertices, num_vertices, triangle_mode, texture_idx, active_texture)))
+		{
+			DrawPrims(p_vertices, num_vertices, triangle_mode, installed_texture);
+		}
 
 		/*if (mTnL.Flags.Fog)
 		{

@@ -171,6 +171,10 @@ static void UpdateTexture( const TextureInfo & ti, CNativeTexture * texture )
 			{
 				Recolour( texels, palette, ti.GetWidth(), ti.GetHeight(), stride, format, c32::White );
 			}
+			if( ti.GetInvertRGB() )
+			{
+				InvertTextureRGB( texels, palette, ti.GetWidth(), ti.GetHeight(), stride, format );
+			}
 
 			//
 			//	Clamp edges. We do this so that non power-of-2 textures whose whose width/height

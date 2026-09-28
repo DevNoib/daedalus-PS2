@@ -56,6 +56,7 @@ private:
 
 	bool		White : 1;			// Force the RGB channels to white (PSP Blender support).
 									// Typically this is set on a copy of the TextureInfo.
+	bool		InvertRGB : 1;	// Invert RGB when creating a transformed texture cache entry.
 
 public:
 	// Pretty gross. Needed so that any padding bytes are consistently zeroed.
@@ -90,6 +91,7 @@ public:
 	inline bool				GetEmulateMirrorS() const		{ return EmulateMirrorS; }
 	inline bool				GetEmulateMirrorT() const		{ return EmulateMirrorT; }
 	inline bool				GetWhite() const				{ return White; }
+	inline bool				GetInvertRGB() const			{ return InvertRGB; }
 
 	inline void				SetLoadAddress( u32 address )	{ LoadAddress = address; }
 	inline void				SetTlutAddress( u32 address )	{ TlutAddress = address; }
@@ -108,6 +110,7 @@ public:
 	inline void				SetEmulateMirrorS( bool e )		{ EmulateMirrorS = e; }
 	inline void				SetEmulateMirrorT( bool e )		{ EmulateMirrorT = e; }
 	inline void				SetWhite( bool white )			{ White = white; }
+	inline void				SetInvertRGB( bool invert )		{ InvertRGB = invert; }
 
 	inline int				Compare( const TextureInfo & rhs ) const			{ return memcmp( this, &rhs, sizeof( TextureInfo ) ); }
 	inline bool				operator==( const TextureInfo & rhs ) const			{ return Compare( rhs ) == 0; }

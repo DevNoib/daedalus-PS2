@@ -33,7 +33,7 @@
 .data
 .align 4
 F001:
-.word	0x3f000000, 0x3e800000, 0x30000000, 0x3ec00000 //0.5 0.25 ? 0.375
+.word	0x3f000000, 0x3e800000, 0x30000000, 0x3ec00000 //0.5 0.25 2^-31 0.375
 	
 .text
 .set		push
@@ -178,6 +178,8 @@ __wnegz:
 	lw			$t2, 12($a2)			// VUR(vf9x) <- load model normal or color word [w,z,y,x]/[a,b,g,r]
 	pextlb		$t2, $t2, $zero
 	pextlh		$t2, $t2, $zero			// [a,z,y,x]
+	psllw		$t2, $t2, 24
+	psraw		$t2, $t2, 24			
 	qmtc2		$t2, VUR(vf12)
 	vitof0.xyzw	VUR(vf12), VUR(vf12)
 	vmr32.xyzw	VUR(vf12), VUR(vf12)				// [z,y,x,a]
@@ -1096,6 +1098,8 @@ next_vertex_PD:
 	lw			$t3, 0($v1)
 	pextlb		$t3, $t3, $zero
 	pextlh		$t3, $t3, $zero			// [a,z,y,x]
+	psllw		$t3, $t3, 24
+	psraw		$t3, $t3, 24		
 	qmtc2		$t3, VUR(vf9)
 	vitof0.xyzw	VUR(vf10), VUR(vf9)
 	vmr32.xyzw	VUR(vf10), VUR(vf10)				// [z,y,x,a]
