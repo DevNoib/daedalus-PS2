@@ -514,21 +514,24 @@ inline s32 vu0_TriNormSign(u8* Base, u32 v0, u32 v1, u32 v2)
 
 inline void vu0_norm_3Dvec(float* x, float* y, float* z)
 {
+	u32 tmp;
+
 	__asm__ volatile (
-		"pextlw		$t0, %2, %0		\n"
-		"pextlw		$t0, %1, $t0	\n"
-		"qmtc2		$t0, " VUR "vf1		\n"
+		"pextlw		%3, %2, %0		\n"
+		"pextlw		%3, %1, %3		\n"
+		"qmtc2		%3, " VUR "vf1		\n"
 		"vmul.xyz	" VUR "vf2, " VUR "vf1, " VUR "vf1	\n"
 		"vaddy.x	" VUR "vf2, " VUR "vf2, " VUR "vf2y	\n"
 		"vaddz.x	" VUR "vf2, " VUR "vf2, " VUR "vf2z	\n"
 		"vrsqrt		" VUR "Q, " VUR "vf0w, " VUR "vf2x	\n"
 		"vwaitq						\n"
 		"vmulq.xyz	" VUR "vf1, " VUR "vf1, " VUR "Q		\n"
-		"qmfc2		$t0, " VUR "vf1		\n"
-		"pextlw		%0, $t0, $t0	\n"
-		"pcpyud		%1, %0, $zero	\n"
-		"pextuw		%2, $t0, $t0	\n"
-		: "+r"(*x), "+r"(*y), "+r"(*z));
+		"qmfc2		%3, " VUR "vf1		\n"
+		"pextlw		%0, %3, %3		\n"
+		"pcpyud		%1, %0, $zero		\n"
+		"pextuw		%2, %3, %3		\n"
+		: "+r"(*x), "+r"(*y), "+r"(*z), "=&r"(tmp)
+	);
 }
 
 #undef VUR
