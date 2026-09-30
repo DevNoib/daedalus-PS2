@@ -35,13 +35,20 @@ extern GSFONTM* gsFontM;
 
 static float fontScale[2];
 
+namespace
+{
+	static const float kFontSpacing = 0.60f;
+	static const float kFontAdvance = 24.0f;
+	static const float kFontHeight = 24.0f;
+}
+
 //*************************************************************************************
 //
 //*************************************************************************************
 void	CDrawText::Initialise()
 {
-	fontScale[F_REGULAR] = 0.75f;
-	fontScale[F_LARGE_BOLD] = 1.10f;
+	fontScale[F_REGULAR] = 0.60f;
+	fontScale[F_LARGE_BOLD] = 0.88f;
 }
 
 //*************************************************************************************
@@ -89,12 +96,12 @@ u32	CDrawText::Render( EFont font_type, s32 x, s32 y, float scale, const char * 
 
 	u64 FontColour = GS_SETREG_RGBAQ(colour.GetR(), colour.GetG(), colour.GetB(), (colour.GetA()) / 2, 0x00);
 	gsFontM->Align = GSKIT_FALIGN_LEFT;
-	gsFontM->Spacing = 0.7f;
+	gsFontM->Spacing = kFontSpacing;
 	gsKit_fontm_print_scaled(gsGlobal, gsFontM, x, y, 0, fontScale[font_type] * scale, FontColour, prt_buf);
 
 	//printf("Render %f scale %f\n", fontScale[font_type], scale);
 
-	return s32(26.0f * gsFontM->Spacing * fontScale[font_type] * scale * length);
+	return s32(kFontAdvance * kFontSpacing * fontScale[font_type] * scale * length);
 }
 
 //*************************************************************************************
@@ -119,7 +126,7 @@ s32		CDrawText::GetTextWidth( EFont font_type, const char * p_str, u32 length, f
 	//printf("GetTextWidth %s %d %d \n", p_str, length, s32(26.0f * gsFontM->Spacing * FONT_SCALE * length));
 	//printf("GetTextWidth %f\n", fontScale[font_type]);
 	
-	return s32(26.0f * gsFontM->Spacing * fontScale[font_type] * scale * length);
+	return s32(kFontAdvance * kFontSpacing * fontScale[font_type] * scale * length);
 }
 
 //*************************************************************************************
@@ -134,7 +141,7 @@ s32		CDrawText::GetFontHeight( EFont font_type )
 		return pixels;
 	}*/
 
-	return s32(26.0f * fontScale[font_type]);
+	return s32(kFontHeight * fontScale[font_type]);
 }
 
 //*************************************************************************************
