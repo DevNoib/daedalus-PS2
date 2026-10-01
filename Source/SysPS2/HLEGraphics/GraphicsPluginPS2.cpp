@@ -232,7 +232,7 @@ void CGraphicsPluginImpl::UpdateScreen()
 				u64 FontColour = GS_SETREG_RGBAQ(0xFF, 0xFF, 0xFF, 0x80, 0x00);
 				gsFontM->Align = GSKIT_FALIGN_LEFT;
 				gsFontM->Spacing = 0.7f;
-				gsKit_fontm_print_scaled(gsGlobal, gsFontM, 5, 5, 1, 0.75f, FontColour, str_buf);
+				gsKit_fontm_print_scaled(gsGlobal, gsFontM, 5, 20, 1, 0.75f, FontColour, str_buf);
 			}
 			if( gGlobalPreferences.BatteryWarning )
 			{
