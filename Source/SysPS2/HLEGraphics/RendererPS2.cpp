@@ -1311,26 +1311,7 @@ void RendererPS2::RenderUsingCurrentBlendMode( DaedalusVtx * p_vertices, u32 num
 			}
 			
 			//sceGuDrawArray(triangle_mode, render_flags, num_vertices, nullptr, p_vertices);
-			if (installed_texture && gsRequestedTFX == GS_TFX_DECAL && gstcc == GS_TCC_RGBA &&
-				gsBlend == GS_SETTING_OFF && !gsGlobal->Test->ATE)
-			{
-				const int saved_tcc = gstcc;
-
-				DrawPrims(p_vertices, num_vertices, triangle_mode, false);
-
-				gsTexFunc(GS_TFX_REPLACE, GS_TCC_RGBA);
-				gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0, 1, 0, 1, 0), 0);
-				gsBlend = GS_SETTING_ON;
-				DrawPrims(p_vertices, num_vertices, triangle_mode, true);
-				gsBlend = GS_SETTING_OFF;
-				gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0, 1, 0, 1, 128), 0);
-
-				gsTexFunc(GS_TFX_DECAL, saved_tcc);
-			}
-			else
-			{
-				DrawPrims(p_vertices, num_vertices, triangle_mode, installed_texture);
-			}
+			DrawPrims(p_vertices, num_vertices, triangle_mode, installed_texture);
 		}
 	}
 	else if (blend_entry.States != nullptr)
